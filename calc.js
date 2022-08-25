@@ -1,13 +1,12 @@
-// var screen = document.getElementById('operations').innerHTML = "test123";
+//___Meme-Calculator by Hubson 2022___
+//___TO DO LIST:
+//___1. [add] clicking multiply then equal causes multipling in a loop
+//___2. [fix] error with clicking equal after result then clicking any number
+//___3. 
+//___4.
 
-var prompterString = "";
-var tempString = "";
-var tempNumber = 0;
-var result = 0;
-var numberA = 0;
-var numberB = 0;
-var inQueue = false;
 
+//___Variables for all the keys___
 const kBackspace = document.getElementById('k_backspace');
 const kCE = document.getElementById('k_CE');
 const kC = document.getElementById('k_C');
@@ -32,76 +31,129 @@ const k0 = document.getElementById('k_0');
 const kComma = document.getElementById('k_comma');
 const kPlus = document.getElementById('k_plus');
 
-k0.addEventListener('click', function () { keyShow("0") });
-k1.addEventListener('click', function () { keyShow(1) });
-k2.addEventListener('click', function () { keyShow(2) });
-k3.addEventListener('click', function () { keyShow(3) });
-k4.addEventListener('click', function () { keyShow(4) });
-k5.addEventListener('click', function () { keyShow(5) });
-k6.addEventListener('click', function () { keyShow(6) });
-k7.addEventListener('click', function () { keyShow(7) });
-k8.addEventListener('click', function () { keyShow(8) });
-k9.addEventListener('click', function () { keyShow(9) });
-kPlus.addEventListener('click', () => { keyShow(" + "); keyOperation(" + ", 1); });
-kMinus.addEventListener('click', () => { keyShow(" - "); keyOperation(" - ", 2); });
+//___Number keys___
+k0.addEventListener('click', function () { keyNr(0) });
+k1.addEventListener('click', function () { keyNr(1) });
+k2.addEventListener('click', function () { keyNr(2) });
+k3.addEventListener('click', function () { keyNr(3) });
+k4.addEventListener('click', function () { keyNr(4) });
+k5.addEventListener('click', function () { keyNr(5) });
+k6.addEventListener('click', function () { keyNr(6) });
+k7.addEventListener('click', function () { keyNr(7) });
+k8.addEventListener('click', function () { keyNr(8) });
+k9.addEventListener('click', function () { keyNr(9) });
+kComma.addEventListener('click', () => { commaOn = true });
 
-function keyShow(keySymbol) {
-    if (!isNaN(keySymbol)) {
-        tempString += keySymbol;
-        // console.log("string = " + tempString);
-        document.querySelector('#result').innerHTML = tempString;
-        tempNumber = parseFloat(tempString);
-    }
-    // prompterString += keySymbol;
-    // document.querySelector('#operations').innerHTML = prompterString;
 
-}
+//___Operation keys___
+kC.addEventListener('click', () => { clearAll() });
+kPlus.addEventListener('click', () => { keyOperation(1); equalPressed = false });
+kMinus.addEventListener('click', () => { keyOperation(2); equalPressed = false });
+kMultiply.addEventListener('click', () => { keyOperation(3); equalPressed = false });
+kDivide.addEventListener('click', () => { keyOperation(4); equalPressed = false });
+kReverse.addEventListener('click', () => { keyReverse(); });
+kSqrt.addEventListener('click', () => { keySqrt(); equalPressed = false });
+k1x.addEventListener('click', () => { key1x(); });
+kEqual.addEventListener('click', () => { keyOperation(9); equalPressed = true });
 
-function keyOperation(operationSymbol, operationNr) {
-    // console.log('execute operation!');
-    // console.log("temp string = " + tempString);
-    if (tempString == "" && inQueue == true) {
-        prompterString = "0" + tempString + operationSymbol;
-    }
-    else prompterString += tempString + operationSymbol;
 
-    document.querySelector('#operations').innerHTML = prompterString;
-    // tempNumber = parseFloat(tempString);
-    tempString = "";
+//___Variables___
+var tempNumber = 0;
+var previousOperation = 0;
+var result = 0;
+var equalPressed = false;
+var commaOn = false;        //Used for inserting float numbers.
+var orderOfMagnitude = 1;   //Used for inserting float numbers.
 
-    // console.log(tempNumber);
-    if (inQueue == true) {
-        numberB = tempNumber;
-        if (operationNr == 1) {
-            result += (tempNumber + numberA);
-        }
-        if (operationNr == 2) {
-            result -= tempNumber;
-        }
-        tempNumber = 0;
-        resultShow(result);
-        console.log("inQueue: ", inQueue);
-        numberA = 0;
+
+//___Functions___
+function keyNr(nr) {
+    if (equalPressed == true) { tempNumber = 0; result = 0; equalPressed = false };
+    if (commaOn == false) {
+        tempNumber = tempNumber * 10 + nr;
     }
     else {
-        numberA = tempNumber;
-        inQueue = true;
-        console.log("inQueue: ", inQueue);
-    };
-    tempNumber = 0;
+        tempNumber = tempNumber + nr / Math.pow(10, orderOfMagnitude);
+        orderOfMagnitude++;
+    }
+    document.querySelector('#result').innerHTML = tempNumber.toFixed(orderOfMagnitude - 1);
 }
 
-function resultShow(r) {
-    document.querySelector('#result').innerHTML = r;
-}
+function keyOperation(opNr) {
 
-//___Clear Prompter___
-kC.addEventListener('click', function () {
-    document.querySelector('#operations').innerHTML = "";
-    prompterString = "";
-    tempString = "";
-    result = 0;
+    commaOn = false;
+    orderOfMagnitude = 1;
+    // if (equalPressed == true && opNr < 5) { }
+    // else {
+    if (equalPressed == false || opNr > 8) {
+        switch (previousOperation) {
+            case 0:
+                result = tempNumber;
+                break;
+            case 1:
+                result += tempNumber;
+                break;
+            case 2:
+                result -= tempNumber;
+                break;
+            case 3:
+                result *= tempNumber;
+                break;
+            case 4:
+                result /= tempNumber;
+                break;
+            case 5:
+
+                break;
+            default:
+                console.log("keyOperation case error!!")
+                break;
+        }
+    }
+
+    if (opNr < 9) {
+
+        previousOperation = opNr;
+        tempNumber = 0;
+    }
+
     document.querySelector('#result').innerHTML = result;
-    numberA = 0;
-    inQueue = false;
-});
+    console.log("Result: ", result);
+}
+
+function keySqrt() {
+    result = Math.sqrt(tempNumber);
+    tempNumber = result;
+    document.querySelector('#result').innerHTML = result;
+}
+
+function keyReverse() {
+    if (equalPressed == true) {
+        result *= -1;
+        document.querySelector('#result').innerHTML = result;
+        console.log(tempNumber);
+    }
+    else {
+        tempNumber *= -1;
+        document.querySelector('#result').innerHTML = tempNumber;
+    }
+    console.log("equalPressed: :", equalPressed);
+
+}
+
+function key1x() {
+    // result = tempNumber;
+    result = 1 / result;
+    document.querySelector('#result').innerHTML = result;
+
+}
+
+function clearAll() {
+    tempNumber = 0;
+    previousOperation = 0;
+    result = 0;
+    equalPressed = false;
+    commaOn = false;
+    orderOfMagnitude = 1;
+    document.querySelector('#result').innerHTML = result;
+}
