@@ -1,9 +1,13 @@
-//___Meme-Calculator by Hubson 2022___
+//___Meme JS-Calculator by Hubson 2022___
 //___TO DO LIST:
-//___1. [add] clicking multiply then equal causes multipling in a loop
-//___2. [fix] error with clicking equal after result then clicking any number
-//___3. 
-//___4.
+//___1. [ADDED] inserting number, clicking multiply then equal causes multipling in a loop
+//___2. [FIXED] error with clicking equal after result then clicking any number
+//___3. [FIXED] when 1/x clicked, for value 0 it shows NaN
+//___4. [FIXED] 1/x really bugged! 1. any number, 2. click 1/x, 3. any number, 4. click 1/x and then crazy "stuff" happen... 
+//___5. [fix] work with CSS and arrange the keys correctly & DRY
+//___6. [ADDED] add negative numbers handling to square root
+//___7. [add] handling numpads
+//___8. [add] documentation: README & comments
 
 
 //___Variables for all the keys___
@@ -47,113 +51,225 @@ kComma.addEventListener('click', () => { commaOn = true });
 
 //___Operation keys___
 kC.addEventListener('click', () => { clearAll() });
-kPlus.addEventListener('click', () => { keyOperation(1); equalPressed = false });
-kMinus.addEventListener('click', () => { keyOperation(2); equalPressed = false });
-kMultiply.addEventListener('click', () => { keyOperation(3); equalPressed = false });
-kDivide.addEventListener('click', () => { keyOperation(4); equalPressed = false });
+kCE.addEventListener('click', () => { clearEntry() });
+kBackspace.addEventListener('click', () => { keyBackspace(); });
+kPlus.addEventListener('click', () => { keyOperation(1); equalPressed = false; });
+kMinus.addEventListener('click', () => { keyOperation(2); equalPressed = false; });
+kMultiply.addEventListener('click', () => { keyOperation(3); equalPressed = false; });
+kDivide.addEventListener('click', () => { keyOperation(4); equalPressed = false; });
+kPercent.addEventListener('click', () => { keyPercent(); equalPressed = false; });
 kReverse.addEventListener('click', () => { keyReverse(); });
 kSqrt.addEventListener('click', () => { keySqrt(); equalPressed = false });
-k1x.addEventListener('click', () => { key1x(); });
-kEqual.addEventListener('click', () => { keyOperation(9); equalPressed = true });
+k1x.addEventListener('click', () => { key1x(); equalPressed = true; });
+kEqual.addEventListener('click', () => { equalPressed = true; keyOperation(9) });
 
 
 //___Variables___
-var tempNumber = 0;
+var tempNumber = null;
 var previousOperation = 0;
-var result = 0;
+var result = null;
 var equalPressed = false;
+var percentPressed = false;
+var percentValue = null;
 var commaOn = false;        //Used for inserting float numbers.
 var orderOfMagnitude = 1;   //Used for inserting float numbers.
-
+var lockKeys = false;
 
 //___Functions___
 function keyNr(nr) {
-    if (equalPressed == true) { tempNumber = 0; result = 0; equalPressed = false };
-    if (commaOn == false) {
-        tempNumber = tempNumber * 10 + nr;
-    }
-    else {
-        tempNumber = tempNumber + nr / Math.pow(10, orderOfMagnitude);
-        orderOfMagnitude++;
-    }
-    document.querySelector('#result').innerHTML = tempNumber.toFixed(orderOfMagnitude - 1);
-}
-
-function keyOperation(opNr) {
-
-    commaOn = false;
-    orderOfMagnitude = 1;
-    // if (equalPressed == true && opNr < 5) { }
-    // else {
-    if (equalPressed == false || opNr > 8) {
-        switch (previousOperation) {
-            case 0:
-                result = tempNumber;
-                break;
-            case 1:
-                result += tempNumber;
-                break;
-            case 2:
-                result -= tempNumber;
-                break;
-            case 3:
-                result *= tempNumber;
-                break;
-            case 4:
-                result /= tempNumber;
-                break;
-            case 5:
-
-                break;
-            default:
-                console.log("keyOperation case error!!")
-                break;
+    if (lockKeys == false) {
+        if (equalPressed == true) { tempNumber = null; result = null; equalPressed = false; previousOperation = 0 };
+        if (commaOn == false) {
+            tempNumber = tempNumber * 10 + nr;
         }
+        else {
+            tempNumber = tempNumber + nr / Math.pow(10, orderOfMagnitude);
+            orderOfMagnitude++;
+            console.log("oOM: " + orderOfMagnitude);
+        }
+        document.querySelector('#result').innerHTML = tempNumber.toFixed(orderOfMagnitude - 1);
     }
-
-    if (opNr < 9) {
-
-        previousOperation = opNr;
-        tempNumber = 0;
+}
+function keyBackspace() {
+    if (equalPressed == false) {
+        if (commaOn == false) {
+            tempNumber = Math.floor(tempNumber / 10);
+        }
+        else {
+            orderOfMagnitude--;
+            console.log("oOM: " + orderOfMagnitude);
+            tempNumber = (Math.floor(tempNumber * Math.pow(10, orderOfMagnitude - 1))) * 1 / Math.pow(10, orderOfMagnitude - 1);
+            if (orderOfMagnitude == 1) { commaOn = false }
+        }
+        document.querySelector('#result').innerHTML = tempNumber.toFixed(orderOfMagnitude - 1);
     }
+}
+function keyOperation(opNr) {
+    if (lockKeys == false) {
+        commaOn = false;
+        // orderOfMagnitude = 1;
+        if (equalPressed == false || opNr > 8) {
+            switch (previousOperation) {
+                case 0:
+                    result = tempNumber;
+                    break;
+                case 1:
+                    result += tempNumber;
+                    break;
+                case 2:
+                    result -= tempNumber;
+                    break;
+                case 3:
+                    if (equalPressed == true && tempNumber === null) {
+                        tempNumber = result;
+                        result *= tempNumber;
+                    }
+                    else {
+                        result *= tempNumber;
+                    }
+                    break;
+                case 4:
+                    if (tempNumber == 0) {
+                        result = "You can't divide by 0!";
+                        lockKeys = true;
+                    }
+                    else {
+                        result /= tempNumber;
+                    };
+                    break;
+                default:
+                    alert("function keyOperation: case error!!")
+                    break;
+            }
+        }
+        if (opNr < 9) {
 
-    document.querySelector('#result').innerHTML = result;
-    console.log("Result: ", result);
+            previousOperation = opNr;
+            tempNumber = null;
+        }
+        showOperationResult(result);
+        console.log("Result: ", result);
+        orderOfMagnitude = 1;
+    }
 }
 
 function keySqrt() {
-    result = Math.sqrt(tempNumber);
-    tempNumber = result;
-    document.querySelector('#result').innerHTML = result;
+    if (lockKeys == false) {
+        if (equalPressed == true && result >= 0) {
+            result = Math.sqrt(result);
+        }
+        else if (equalPressed == false && tempNumber >= 0) {
+            result = Math.sqrt(tempNumber);
+        }
+        else { result = "Invalid input!" }
+        tempNumber = result;
+        orderOfMagnitude = 1;
+        showOperationResult(result);
+    }
 }
 
 function keyReverse() {
-    if (equalPressed == true) {
-        result *= -1;
-        document.querySelector('#result').innerHTML = result;
-        console.log(tempNumber);
+    if (lockKeys == false) {
+        if (equalPressed == true) {
+            result *= -1;
+            showOperationResult(result);
+        }
+        else {
+            tempNumber *= -1;
+            showOperationResult(tempNumber);
+        }
     }
-    else {
-        tempNumber *= -1;
-        document.querySelector('#result').innerHTML = tempNumber;
-    }
-    console.log("equalPressed: :", equalPressed);
-
 }
 
 function key1x() {
-    // result = tempNumber;
-    result = 1 / result;
-    document.querySelector('#result').innerHTML = result;
+    if (lockKeys == false) {
+        if (equalPressed == true || (result != null && tempNumber == null)) {
+            if (result == 0 || result == NaN || result == null) {
+                result = "You can't divide by 0!";
+                lockKeys = true;
+            }
+            else {
+                result = 1 / result;
+            };
+        }
+        else {
+            if (tempNumber == 0 || tempNumber == NaN || tempNumber == null) {
+                result = "You can't divide by 0!";
+                lockKeys = true;
+            }
+            else {
+                result = 1 / tempNumber;
+            }
+        }
+        tempNumber = result;
+        showOperationResult(result);
+        orderOfMagnitude = 1;
+    }
+}
 
+function keyPercent() {
+    if (lockKeys == false) {
+        if (percentPressed == false) {
+            percentValue = (tempNumber / 100) * result;
+        }
+        switch (previousOperation) {
+            case 0:
+                result = 0;
+                break;
+            case 1:
+                result += percentValue;
+                break;
+            case 2:
+                result -= percentValue;
+                break;
+            case 3:
+                result *= percentValue;
+                break;
+            case 4:
+                result /= percentValue;
+                break;
+            default:
+                alert("error! function keyPercent: case error!!")
+                break;
+        }
+        percentPressed = true;
+        tempNumber = null;
+        orderOfMagnitude = 1;
+        showOperationResult(result);
+    }
+}
+
+function showOperationResult(res) {
+    if (typeof res === "string") {
+        document.querySelector('#result').innerHTML = res;
+    }
+    else {
+        document.querySelector('#result').innerHTML = (Math.round(res * Math.pow(10, 14))) / Math.pow(10, 14);
+    }
 }
 
 function clearAll() {
-    tempNumber = 0;
+    tempNumber = null;
     previousOperation = 0;
-    result = 0;
+    result = null;
     equalPressed = false;
     commaOn = false;
     orderOfMagnitude = 1;
-    document.querySelector('#result').innerHTML = result;
+    lockKeys = false;
+    percentPressed = false;
+    showOperationResult(result);
 }
+
+function clearEntry() {
+    tempNumber = null;
+    commaOn = false;
+    orderOfMagnitude = 1;
+    lockKeys = false;
+    showOperationResult(0);
+}
+
+
+
+//___quick copy to console in web browser
+console.log("tempNumber: " + tempNumber)
+console.log("result: " + result)
